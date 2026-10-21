@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>스케줄러</title>
+  <style>
+    @font-face {
+      font-family: 'OROM_LEE_SOOIN';
+      src: url('OROM_LEE_SOOIN.ttf') format('truetype');
+    }
+
+    :root {
+      --border-color: #d1d5db;
+      --header-bg: #f8fafc;
+      --accent-blue: #1e3a8a;
+      --text-main: #1f2937;
+      --light-gray: #f3f4f6;
+      --sun-color: #dc2626;
+      --sat-color: #2563eb;
+      --today-bg: #eff6ff;
+      --today-border: #3b82f6;
+      --danger-color: #dc2626;
+      --sun-bg-tint: #fef2f2;
+      --sidebar-width: 180px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #e5e7eb;
+      padding: 10px;
+      color: var(--text-main);
+    }
+
+    .planner-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .month-header {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .month-num {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--accent-blue);
+      line-height: 1;
+    }
+    .month-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #4b5563;
+      text-transform: uppercase;
+    }
+
+    .nav-btn-group {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .nav-icon-btn {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #374151;
+      transition: all 0.2s;
+    }
+    .nav-icon-btn:hover { background: var(--light-gray); color: var(--accent-blue); }
+
+    /* PC용 상단 테이블 뷰 (루틴만 배치) */
+    .top-section-wrapper {
+      width: 100%;
+      background: #ffffff;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .top-section-table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      background: #ffffff;
+      font-size: 11px;
+    }
+
+    .top-section-table th, .top-section-table td {
+      border: 1px solid var(--border-color);
+      padding: 0;
+      vertical-align: middle;
+      text-align: center;
+      overflow: hidden;
+      height: 30px;
+    }
+
+    .top-section-table th {
+      background: var(--header-bg);
+      font-weight: 700;
+      color: #374151;
+      font-size: 10px;
+      height: 28px;
+    }
+
+    .routine-title-input {
+      width: 100%;
+      height: 30px;
+      border: none;
+      background: transparent;
+      padding: 0 8px;
+      font-size: 13px;
+      font-family: 'OROM_LEE_SOOIN', sans-serif;
+      outline: none;
+    }
+
+    .routine-check-box {
+      width: 100%;
+      height: 30px;
+      background: transparent;
+      margin: 0 auto;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+      color: var(--accent-blue);
+      user-select: none;
+      transition: background 0.1s;
+    }
+    .routine-check-box:hover {
+      background: #f3f4f6;
+    }
+    .routine-check-box.checked {
+      background: #fef6b8;
+    }
+
+    .sun-col { background-color: #fef2f2 !important; color: var(--sun-color); }
+    .sat-col { background-color: #eff6ff !important; color: var(--sat-color); }
+
+    /* 모바일 전용 상하 카드 뷰 */
+    .mobile-top-section {
+      display: none;
+      flex-direction: column;
+      background: #ffffff;
+      border-bottom: 2px solid var(--border-color);
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .mobile-card {
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 12px;
+    }
+    .mobile-card:last-child {
+      border-bottom: none;
+    }
+    .mobile-card-title {
+      font-size: 11px;
+      font-weight: bold;
+      color: #374151;
+      background: var(--header-bg);
+      padding: 4px 8px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 6px;
+      border-radius: 4px;
+    }
+    .mobile-routine-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .mobile-routine-row input {
+      width: 100%;
+      height: 30px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 0 8px;
+      font-family: 'OROM_LEE_SOOIN', sans-serif;
+      font-size: 13px;
+    }
+    
+    .mobile-routine-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-bottom: 8px;
+      width: 100%;
+    }
+    .mobile-routine-subrow {
+      display: flex;
+      width: 100%;
+      gap: 2px;
+    }
+    .mobile-day-chip {
+      flex: 1;
+      height: 28px;
+      border: 1px solid var(--border-color);
+      border-radius: 3px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      cursor: pointer;
+      background: #fff;
+    }
+    .mobile-day-chip.checked {
+      background: #eff6ff;
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+      font-weight: bold;
+    }
+
+    .bottom-notes-section {
+      padding: 10px 16px;
+      border-bottom: 2px solid var(--border-color);
+      background: #ffffff;
+    }
+    .bottom-notes-section h4 {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .lined-textarea {
+      width: 100%;
+      border: none;
+      outline: none;
+      resize: none;
+      font-family: 'OROM_LEE_SOOIN', sans-serif;
+      font-size: 13px;
+      background: transparent;
+      line-height: 25px;
+      background-image: linear-gradient(to bottom, transparent 24px, #f3f4f6 24px);
+      background-size: 100% 25px;
+    }
+
+    .main-body {
+      display: flex;
+      flex-direction: row;
+      position: relative;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--border-color);
+      align-items: stretch;
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 0; }
+      .top-section-wrapper {
+        display: none !important;
+      }
+      .mobile-top-section {
+        display: flex !important;
+      }
+      .main-body {
+        flex-direction: column !important;
+      }
+      .left-sidebar {
+        width: 100% !important;
+        min-width: 100% !important;
+        border-right: none !important;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .left-sidebar.collapsed {
+        width: 100% !important;
+        min-width: 100% !important;
+      }
+
+      input[type="date"],
+      select {
+        -webkit-appearance: none; /* 사파리/크롬 네이티브 스타일 제거 */
+        -moz-appearance: none;    /* 파이어폭스 네이티브 스타일 제거 */
+        appearance: none;
+        background-color: #fff;   /* 배경색 지정 (기본값 제거 시 투명해질 수 있음) */
+      }
+      .month-header {
+        flex-direction: column;
+      }
+    }
+
+    .left-sidebar {
+      width: var(--sidebar-width);
+      min-width: var(--sidebar-width);
+      background: #fafafa;
+      transition: width 0.25s ease, min-width 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      user-select: none;
+      border-right: 1px solid var(--border-color);
+    }
+
+    .left-sidebar.collapsed {
+      width: 32px;
+      min-width: 32px;
+    }
+
+    .sidebar-title {
+      background: var(--header-bg);
+      padding: 0 6px;
+      font-weight: bold;
+      font-size: 11px;
+      border-bottom: 1px solid var(--border-color);
+      color: #374151;
+      height: 33px;
+      min-height: 33px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .sidebar-title-text {
+      white-space: nowrap;
+      transition: opacity 0.2s;
+    }
+
+    .left-sidebar.collapsed .sidebar-title-text {
+      display: none;
+    }
+
+    .toggle-sidebar-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      font-size: 11px;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: auto;
+      border-radius: 3px;
+    }
+    .toggle-sidebar-btn:hover {
+      color: var(--accent-blue);
+      background: rgba(0,0,0,0.05);
+    }
+
+    .daily-focus-list {
+      display: flex;
+      flex-direction: column;
+      background: #fafafa;
+      flex: 1;
+    }
+
+    .left-sidebar.collapsed .daily-focus-list {
+      display: none;
+    }
+
+    .daily-focus-item {
+      display: flex;
+      border-bottom: 1px solid #edf2f7;
+      height: 30px;
+      min-height: 30px;
+      align-items: center;
+    }
+    
+    .daily-focus-item.sun-item {
+      background-color: var(--sun-bg-tint);
+    }
+
+    .daily-focus-item .num {
+      width: 28px;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 11px;
+      border-right: 1px solid #edf2f7;
+    }
+    
+    .daily-focus-item .num.sun {
+      color: var(--sun-color);
+      font-weight: bold;
+    }
+
+    .daily-focus-item input {
+      border: none;
+      width: 100%;
+      height: 100%;
+      padding: 0 6px;
+      background: transparent !important;
+      color: var(--text-main) !important;
+      opacity: 1 !important;
+      font-size: 13px;
+      outline: none;
+      font-family: 'OROM_LEE_SOOIN', sans-serif;
+    }
+
+    .calendar-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      min-width: 0;
+    }
+
+    .calendar-grid {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      background: var(--border-color);
+      gap: 1px;
+      flex: 1;
+    }
+
+    .day-header-row {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      background: var(--border-color);
+      gap: 1px;
+      min-height: 33px;
+    }
+
+    .day-header {
+      background: var(--header-bg);
+      padding: 8px 0;
+      text-align: center;
+      font-weight: 700;
+      font-size: 12px;
+      height: 33px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .day-header.sun { color: var(--sun-color); }
+    .day-header.sat { color: var(--sat-color); }
+
+    .calendar-weeks-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      background: var(--border-color);
+      flex: 1;
+    }
+
+    .week-row {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      flex: 1;
+      min-height: 120px; 
+      gap: 1px;
+      background: var(--border-color);
+    }
+
+    .calendar-cell {
+      flex: 1;
+      min-height: 120px;
+      padding: 4px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      min-width: 0;
+    }
+    .calendar-cell.other-month {
+      background-color: #f9fafb;
+      opacity: 1.5;
+    }
+    .calendar-cell.other-month .cell-number {
+      color: lightgray;
+    }
+
+    .calendar-cell.is-today {
+      background-color: var(--today-bg) !important;
+      box-shadow: inset 0 0 0 2px var(--today-border);
+      z-index: 2;
+    }
+    
+    .today-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      background-color: var(--today-border);
+      color: #fff;
+      border-radius: 50%;
+      font-weight: 700;
+    }
+
+    .cell-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      height: 20px;
+    }
+    .cell-number {
+      font-weight: 700;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+    }
+    .cell-number.sun { color: var(--sun-color); }
+    .cell-number.sat { color: var(--sat-color); }
+
+    .add-btn {
+      border: none;
+      background: transparent;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+    .add-btn:hover { background: var(--light-gray); color: var(--accent-blue); }
+
+    .event-container {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .event-slot {
+      height: 24px;
+      min-width: 0;
+    }
+
+    .event-bar {
+      height: 24px;
+      font-size: 13px;
+      padding: 2px 8px;
+      border-radius: 0;
+      font-weight: 600;
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      min-width: 0;
+      transition: filter 0.15s;
+      background-color: var(--highlighter-bg, rgba(168, 85, 247, 0.25));
+      color: var(--highlighter-text, #6b21a8);
+      font-family: 'OROM_LEE_SOOIN', sans-serif;
+    }
+    
+    .event-bar:hover { filter: brightness(0.95); }
+    
+    .event-bar.start-date {
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
+      border-left: 3px solid var(--highlighter-border, #a855f7);
+    }
+
+    .event-bar.end-date {
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
+      border-right: 3px solid var(--highlighter-border, #a855f7);
+    }
+
+    .event-bar.start-date.end-date {
+      border-radius: 4px;
+      border-left: 3px solid var(--highlighter-border, #a855f7);
+      border-right: none;
+    }
+
+    #customTooltip {
+      position: fixed;
+      display: none;
+      background: rgba(17, 24, 39, 0.92);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.4;
+      max-width: 280px;
+      word-break: break-all;
+      white-space: normal;
+      pointer-events: none;
+      z-index: 9999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-card {
+      background: #fff;
+      width: 320px;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 12px;
+      color: var(--accent-blue);
+    }
+    .form-group { margin-bottom: 10px; }
+    .form-group label { display: block; font-size: 11px; color: #6b7280; margin-bottom: 4px; }
+    .form-group input { 
+      width: 100%; 
+      padding: 6px 8px; 
+      border: 1px solid var(--border-color); 
+      border-radius: 4px; 
+      font-size: 13px; 
+      font-family: 'OROM_LEE_SOOIN', sans-serif;
+    }
+    
+    .modal-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+    }
+    .right-actions { display: flex; gap: 8px; }
+    .btn { padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; border: none; }
+    .btn-secondary { background: #e5e7eb; color: #374151; }
+    .btn-primary { background: var(--accent-blue); color: #fff; }
+    .btn-danger { background: var(--danger-color); color: #fff; }
+
+    .custom-alert-card {
+      width: 280px;
+      text-align: center;
+      padding: 24px 20px 20px 20px;
+    }
+    .custom-alert-msg {
+      font-size: 13px;
+      color: var(--text-main);
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+    .custom-alert-actions {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .bottom-section {
+      padding: 10px 16px;
+      background: var(--header-bg);
+      font-size: 12px;
+      color: #6b7280;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border-color);
+    }
+  </style>
+</head>
+<body>
+
+<div id="customTooltip"></div>
+
+<div class="planner-container">
+  <div class="top-nav">
+    <div class="month-header">
+      <div class="month-num" id="monthNum">--</div>
+      <div class="month-title" id="monthTitle">---- --------</div>
+      
+    </div>
+    <input type="month" id="monthPicker" style="margin-left: 15px; padding: 4px 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 13px; cursor: pointer;" onchange="jumpToMonth(this.value)">
+    <div class="nav-btn-group">
+      <button class="nav-icon-btn" onclick="changeMonth(-1)" title="이전달">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      <button class="nav-icon-btn" onclick="goToday()" title="오늘">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+      </button>
+      <button class="nav-icon-btn" onclick="changeMonth(1)" title="다음달">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- PC용 상단 테이블 뷰 (루틴만 배치) -->
+  <div class="top-section-wrapper">
+    <table class="top-section-table" id="topSectionTable">
+      <!-- 자바스크립트 동적 렌더링 -->
+    </table>
+  </div>
+
+  <!-- 모바일 전용 상하 카드 뷰 (루틴만 배치) -->
+  <div class="mobile-top-section" id="mobileTopSection">
+    <!-- 자바스크립트 동적 렌더링 -->
+  </div>
+
+  <div class="main-body">
+    <div class="left-sidebar" id="leftSidebar">
+      <div class="sidebar-title">
+        <span class="sidebar-title-text">DAILY FOCUS</span>
+        <button class="toggle-sidebar-btn" id="toggleSidebarBtn" onclick="toggleSidebar()" title="접기/펼치기">◀</button>
+      </div>
+      <div class="daily-focus-list" id="dailyFocusList"></div>
+    </div>
+
+    <div class="calendar-section">
+      <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+  </div>
+
+  <div class="bottom-notes-section">
+    <h4>NOTES</h4>
+    <textarea id="notesInput" class="lined-textarea" style="height: 140px;" placeholder="메모..." oninput="triggerAutoSaveWithDelay('notes', this.value)"></textarea>
+  </div>
+
+  <div class="bottom-section">
+    <div id="statusText">데이터 연동 대기 중</div>
+    <div><span style="color: #3b82f6; font-weight: bold;">Hzzin</span> Scheduler v1.0</div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="eventModal">
+  <div class="modal-card">
+    <div class="modal-title" id="modalHeaderTitle">새 일정 등록</div>
+    <input type="hidden" id="modalEventId">
+    <div class="form-group">
+      <label>일정 내용</label>
+      <input type="text" id="modalTitle" placeholder="예: 워크샵, 안녕">
+    </div>
+    <div class="form-group">
+      <label>시작일</label>
+      <input type="date" id="modalStartDate">
+    </div>
+    <div class="form-group">
+      <label>종료일</label>
+      <input type="date" id="modalEndDate">
+    </div>
+    <div class="form-group">
+      <label>형광펜 색상 선택</label>
+      <input type="color" id="modalColor" value="#a855f7">
+    </div>
+    <div class="modal-actions">
+      <div>
+        <button class="btn btn-danger" id="deleteBtn" style="display: none;" onclick="deleteEventFromModal()">삭제</button>
+      </div>
+      <div class="right-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">취소</button>
+        <button class="btn btn-primary" onclick="saveEventFromModal()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="customAlertModal">
+  <div class="modal-card custom-alert-card">
+    <div class="custom-alert-msg" id="customAlertMessage">알림 메시지</div>
+    <div class="custom-alert-actions" id="customAlertActions"></div>
+  </div>
+</div>
+
+<script>
+  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz88toeJNLU9msNUEN71Jmu9acImW-vz5qDq3SPSseIBZsJz9kRxYmx_y2P4SW_Qnk1qQ/exec";
+
+  const urlParams = new URLSearchParams(window.location.search);
+  let PLANNER_ID = urlParams.get('id') || localStorage.getItem('planner_ss_id');
+  const SECRET_TOKEN = urlParams.get('token') || localStorage.getItem('planner_token') || "";
+
+  const today = new Date();
+  let currentDate = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  let events = [];
+  let monthlyRoutines = {};
+  let autoSaveTimers = {};
+
+  window.onload = function() {
+    if (!PLANNER_ID) {
+      let inputId = prompt("파일 ID를 입력하세요:", "");
+      if (inputId) {
+        PLANNER_ID = inputId.trim();
+        localStorage.setItem('planner_ss_id', PLANNER_ID);
+      }
+    }
+    loadDataFromCloud();
+  };
+
+  function cleanDateStr(val) {
+    if (!val) return "";
+    let str = String(val).trim();
+    if (str.includes("T")) str = str.split('T')[0];
+    let d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      let y = d.getFullYear();
+      let m = String(d.getMonth() + 1).padStart(2, '0');
+      let day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+    return str;
+  }
+
+  async function loadDataFromCloud() {
+    if (!PLANNER_ID) {
+      renderPlanner();
+      return;
+    }
+    document.getElementById('statusText').innerText = "데이터를 불러오는 중...";
+    try {
+      const currentToken = urlParams.get('key');
+      const res = await fetch(`${GAS_WEB_APP_URL}?id=${PLANNER_ID}&token=${currentToken}&action=load`);
+      const result = await res.json();
+      
+      if (result.status === "success") {
+        const rawEvents = result.data.events || [];
+        events = rawEvents.map(ev => ({
+          ...ev,
+          startDate: cleanDateStr(ev.startDate),
+          endDate: cleanDateStr(ev.endDate)
+        }));
+
+        const cloudMemos = result.data.memos || {};
+        monthlyRoutines = {};
+
+        for (let rawKey in cloudMemos) {
+          let mKey = String(rawKey).trim();
+          if (mKey.includes('GMT') || mKey.includes('T') || mKey.length > 7) {
+            let d = new Date(mKey);
+            if (!isNaN(d.getTime())) {
+              mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            } else {
+              mKey = mKey.substring(0, 7);
+            }
+          }
+
+          if (!monthlyRoutines[mKey]) {
+            monthlyRoutines[mKey] = { checks: Array(32).fill(false), focus: {}, notes: '', routines: [] };
+          }
+
+          const fields = cloudMemos[rawKey];
+          for (let fKey in fields) {
+            let val = fields[fKey];
+            if (fKey.startsWith('routine_title_')) {
+              let rIdx = parseInt(fKey.split('_')[2]);
+              if (!monthlyRoutines[mKey].routines) monthlyRoutines[mKey].routines = [];
+              if (!monthlyRoutines[mKey].routines[rIdx]) monthlyRoutines[mKey].routines[rIdx] = { title: '', data: {} };
+              monthlyRoutines[mKey].routines[rIdx].title = val;
+            } else if (fKey.startsWith('routine_data_')) {
+              let parts = fKey.split('_');
+              let rIdx = parseInt(parts[2]);
+              let dayNum = parseInt(parts[3]);
+              if (!monthlyRoutines[mKey].routines) monthlyRoutines[mKey].routines = [];
+              if (!monthlyRoutines[mKey].routines[rIdx]) monthlyRoutines[mKey].routines[rIdx] = { title: '', data: {} };
+              monthlyRoutines[mKey].routines[rIdx].data[dayNum] = val;
+            } else if (fKey.startsWith('focus_')) {
+              let dayNum = fKey.split('_')[1];
+              if (!monthlyRoutines[mKey].focus) monthlyRoutines[mKey].focus = {};
+              monthlyRoutines[mKey].focus[dayNum] = val;
+            } else if (fKey === 'notes') {
+              monthlyRoutines[mKey].notes = val;
+            }
+          }
+        }
+        document.getElementById('statusText').innerText = "데이터 연동 완료 (데이터 로드 성공)";
+        renderPlanner();
+      } else {
+        document.getElementById('statusText').innerText = "데이터 로드 실패: " + result.message;
+        renderPlanner();
+      }
+    } catch (err) {
+      document.getElementById('statusText').innerText = "서버 통신 오류 (오프라인 모드)";
+      console.error(err);
+      renderPlanner();
+    }
+  }
+
+  function triggerAutoSaveWithDelay(fieldKey, value) {
+    if (!PLANNER_ID) return;
+    const monthKey = getCurrentMonthKey();
+    const currentToken = urlParams.get('key');
+
+    document.getElementById('statusText').innerText = "저장 중...";
+    
+    if (autoSaveTimers[fieldKey]) clearTimeout(autoSaveTimers[fieldKey]);
+
+    autoSaveTimers[fieldKey] = setTimeout(async () => {
+      try {
+        const res = await fetch(`${GAS_WEB_APP_URL}?id=${PLANNER_ID}&token=${currentToken}`, {
+          method: 'POST',
+          body: JSON.stringify({ type: 'memo', monthKey: monthKey, fieldKey: fieldKey, value: value })
+        });
+        const result = await res.json();
+        if (result.status === "success") {
+          document.getElementById('statusText').innerText = "데이터 자동 저장 완료";
+        } else {
+          document.getElementById('statusText').innerText = "저장 실패";
+        }
+      } catch (err) {
+        document.getElementById('statusText').innerText = "자동 저장 통신 에러";
+      }
+    }, 3000);
+  }
+
+  async function syncEventToCloud(eventObj, isDelete = false) {
+    if (!PLANNER_ID) return;
+    document.getElementById('statusText').innerText = "일정 동기화 중...";
+    const currentToken = urlParams.get('key');
+    try {
+      const res = await fetch(`${GAS_WEB_APP_URL}?id=${PLANNER_ID}&token=${currentToken}`, {
+        method: 'POST',
+        body: JSON.stringify({ type: isDelete ? 'delete_event' : 'event', eventId: eventObj.id, event: eventObj })
+      });
+      const result = await res.json();
+      if (result.status === "success") {
+        document.getElementById('statusText').innerText = "일정 저장 완료";
+      }
+    } catch (err) {
+      document.getElementById('statusText').innerText = "일정 동기화 오류";
+    }
+  }
+
+  function showAlert(message) {
+    return new Promise((resolve) => {
+      document.getElementById('customAlertMessage').innerText = message;
+      document.getElementById('customAlertActions').innerHTML = `<button class="btn btn-primary" id="alertOkBtn" style="width: 100%;">확인</button>`;
+      const modal = document.getElementById('customAlertModal');
+      modal.style.display = 'flex';
+      document.getElementById('alertOkBtn').onclick = () => { modal.style.display = 'none'; resolve(); };
+    });
+  }
+
+  function showConfirm(message) {
+    return new Promise((resolve) => {
+      document.getElementById('customAlertMessage').innerText = message;
+      document.getElementById('customAlertActions').innerHTML = `
+        <button class="btn btn-secondary" id="confirmCancelBtn" style="flex: 1;">취소</button>
+        <button class="btn btn-danger" id="confirmOkBtn" style="flex: 1;">확인</button>
+      `;
+      const modal = document.getElementById('customAlertModal');
+      modal.style.display = 'flex';
+      document.getElementById('confirmCancelBtn').onclick = () => { modal.style.display = 'none'; resolve(false); };
+      document.getElementById('confirmOkBtn').onclick = () => { modal.style.display = 'none'; resolve(true); };
+    });
+  }
+
+  function toggleSidebar() {
+    const sidebar = document.getElementById('leftSidebar');
+    const toggleBtn = document.getElementById('toggleSidebarBtn');
+    sidebar.classList.toggle('collapsed');
+    toggleBtn.innerText = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+    setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 250);
+  }
+
+  function changeMonth(delta) {
+    currentDate.setMonth(currentDate.getMonth() + delta);
+    renderPlanner();
+  }
+
+  function goToday() {
+    currentDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    renderPlanner();
+    setTimeout(() => {
+      const todayCell = document.querySelector('.calendar-cell.is-today');
+      if (todayCell) todayCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }
+
+  function jumpToMonth(value) {
+    if (!value) return;
+    const [year, month] = value.split('-').map(Number);
+    currentDate = new Date(year, month - 1, 1);
+    renderPlanner();
+  }
+
+  function getCurrentMonthKey() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    return `${year}-${String(month + 1).padStart(2, '0')}`;
+  }
+
+  function renderPlanner() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const monthKey = getCurrentMonthKey();
+
+    if (!monthlyRoutines[monthKey]) {
+      monthlyRoutines[monthKey] = { checks: Array(32).fill(false), focus: {}, notes: '', routines: [] };
+    }
+    const currentMonthData = monthlyRoutines[monthKey];
+
+    document.getElementById('monthNum').innerText = month + 1;
+    const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+    document.getElementById('monthTitle').innerText = `${year} ${monthNames[month]}`;
+
+    const monthPickerEl = document.getElementById('monthPicker');
+    if (monthPickerEl) monthPickerEl.value = monthKey;
+
+    renderTopSectionTable(monthKey);
+    renderMobileTopSection(monthKey);
+
+    const notesEl = document.getElementById('notesInput');
+    if (notesEl) notesEl.value = currentMonthData.notes || '';
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const focusList = document.getElementById('dailyFocusList');
+    focusList.innerHTML = '';
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateObj = new Date(year, month, d);
+      const isSun = (dateObj.getDay() === 0);
+
+      const item = document.createElement('div');
+      item.className = 'daily-focus-item' + (isSun ? ' sun-item' : '');
+      
+      const savedVal = (currentMonthData.focus && (currentMonthData.focus[d] !== undefined ? currentMonthData.focus[d] : currentMonthData.focus[String(d)])) || '';
+
+      item.innerHTML = `
+        <span class="num ${isSun ? 'sun' : ''}">${d}</span>
+        <input type="text" value="${savedVal}" />
+      `;
+      
+      item.querySelector('input').oninput = function() {
+        if (!monthlyRoutines[monthKey].focus) monthlyRoutines[monthKey].focus = {};
+        monthlyRoutines[monthKey].focus[d] = this.value;
+        triggerAutoSaveWithDelay(`focus_${d}`, this.value);
+      };
+
+      focusList.appendChild(item);
+    }
+
+    renderUnifiedCalendar(year, month);
+  }
+
+  function renderTopSectionTable(monthKey) {
+    const currentMonthData = monthlyRoutines[monthKey];
+    const samplePlaceholders = ['10분 모닝노트'];
+
+    if (!currentMonthData.routines || currentMonthData.routines.length === 0) {
+      currentMonthData.routines = [
+        { title: '', data: {} },
+        { title: '', data: {} },
+        { title: '', data: {} }
+      ];
+    }
+
+    const [year, month] = monthKey.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    const table = document.getElementById('topSectionTable');
+    if (!table) return;
+
+    let html = `<colgroup>
+                  <col style="width: 150px;">`;
+    for (let d = 1; d <= daysInMonth; d++) {
+      html += `<col style="width: 28px;">`;
+    }
+    html += `</colgroup>`;
+    
+    html += `<thead><tr>`;
+    html += `<th>MONTHLY ROUTINE</th>`;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dayOfWeek = new Date(year, month - 1, d).getDay();
+      let colClass = (dayOfWeek === 0) ? 'sun-col' : (dayOfWeek === 6 ? 'sat-col' : '');
+      html += `<th class="${colClass}" style="font-size: 10px; padding: 0;">${d}</th>`;
+    }
+    html += `</tr></thead><tbody>`;
+
+    const rowCount = 3;
+    for (let rIdx = 0; rIdx < rowCount; rIdx++) {
+      html += `<tr>`;
+
+      const routine = currentMonthData.routines[rIdx] || { title: '', data: {} };
+      const placeholderText = samplePlaceholders[rIdx] || `습관 ${rIdx + 1}`;
+
+      html += `<td style="padding: 0;">
+                 <input type="text" class="routine-title-input" value="${routine.title || ''}" placeholder="${placeholderText}" oninput="updateRoutineTitle(${rIdx}, this.value)">
+               </td>`;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayOfWeek = new Date(year, month - 1, d).getDay();
+        let colClass = (dayOfWeek === 0) ? 'sun-col' : (dayOfWeek === 6 ? 'sat-col' : '');
+        const val = (routine.data && routine.data[d]) || '';
+        const isChecked = val === '✓' || val === true ? 'checked' : '';
+        const displayVal = isChecked ? '✓' : '';
+
+        html += `<td class="${colClass}" style="border: 1px solid #e5e7eb; padding: 0; text-align: center;">
+                   <div class="routine-check-box ${isChecked}" onclick="toggleRoutineCell(${rIdx}, ${d}, this)">${displayVal}</div>
+                 </td>`;
+      }
+      html += `</tr>`;
+    }
+    html += `</tbody>`;
+    table.innerHTML = html;
+  }
+
+  function renderMobileTopSection(monthKey) {
+    const currentMonthData = monthlyRoutines[monthKey];
+    const samplePlaceholders = ['10분 모닝노트', '핸드드로잉 수업', '틈틈이 독서'];
+    const [year, month] = monthKey.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    const container = document.getElementById('mobileTopSection');
+    if (!container) return;
+
+    let html = `<div class="mobile-card"><div class="mobile-card-title">ROUTINE</div>`;
+
+    for (let rIdx = 0; rIdx < 3; rIdx++) {
+      const routine = currentMonthData.routines[rIdx] || { title: '', data: {} };
+      const placeholderText = samplePlaceholders[rIdx] || `습관 ${rIdx + 1}`;
+
+      html += `
+        <div class="mobile-routine-row">
+          <input type="text" value="${routine.title || ''}" placeholder="${placeholderText}" oninput="updateRoutineTitle(${rIdx}, this.value)">
+        </div>
+        <div class="mobile-routine-grid">
+      `;
+
+      const rowsData = [
+        { start: 1, end: 11 },
+        { start: 12, end: 22 },
+        { start: 23, end: daysInMonth }
+      ];
+
+      rowsData.forEach(row => {
+        html += `<div class="mobile-routine-subrow">`;
+        for (let d = row.start; d <= row.end; d++) {
+          const val = (routine.data && routine.data[d]) || '';
+          const isChecked = val === '✓' || val === true ? 'checked' : '';
+          html += `<div class="mobile-day-chip ${isChecked}" onclick="toggleRoutineCell(${rIdx}, ${d}, this)">
+                     <span style="font-size:8px; color:#9ca3af;">${d}</span>
+                     <span>${isChecked ? '✓' : ''}</span>
+                   </div>`;
+        }
+        if (row.end === daysInMonth && (row.end - row.start + 1) < 11) {
+          let emptyCount = 11 - (row.end - row.start + 1);
+          for (let e = 0; e < emptyCount; e++) {
+            html += `<div class="mobile-day-chip" style="visibility: hidden; border: none;"></div>`;
+          }
+        }
+        html += `</div>`;
+      });
+
+      html += `</div>`;
+    }
+
+    html += `</div>`;
+    container.innerHTML = html;
+  }
+
+  function updateRoutineTitle(rIdx, val) {
+    const monthKey = getCurrentMonthKey();
+    if (!monthlyRoutines[monthKey].routines[rIdx]) monthlyRoutines[monthKey].routines[rIdx] = { title: '', data: {} };
+    monthlyRoutines[monthKey].routines[rIdx].title = val;
+    triggerAutoSaveWithDelay(`routine_title_${rIdx}`, val);
+  }
+
+  function toggleRoutineCell(rIdx, day, el) {
+    const monthKey = getCurrentMonthKey();
+    if (!monthlyRoutines[monthKey].routines[rIdx].data) monthlyRoutines[monthKey].routines[rIdx].data = {};
+    
+    let currentVal = monthlyRoutines[monthKey].routines[rIdx].data[day];
+    let newVal = (currentVal === '✓') ? '' : '✓';
+    
+    monthlyRoutines[monthKey].routines[rIdx].data[day] = newVal;
+    
+    renderPlanner();
+    triggerAutoSaveWithDelay(`routine_data_${rIdx}_${day}`, newVal);
+  }
+
+  function hexToHighlighter(hex) {
+    let c = hex.replace('#', '');
+    if (c.length === 3) c = c.split('').map(x => x + x).join('');
+    const num = parseInt(c, 16);
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+
+    return {
+      bg: `rgba(${r}, ${g}, ${b}, 0.28)`,
+      border: `rgb(${r}, ${g}, ${b})`,
+      text: `rgb(${Math.max(0, r - 80)}, ${Math.max(0, g - 80)}, ${Math.max(0, b - 80)})`
+    };
+  }
+
+  function renderUnifiedCalendar(year, month) {
+    const calendarGrid = document.getElementById('calendarGrid');
+    calendarGrid.innerHTML = '';
+
+    const headerRow = document.createElement('div');
+    headerRow.className = 'day-header-row';
+
+    const weekHeaders = [
+      { name: 'SUN', class: 'sun' }, { name: 'MON', class: '' }, { name: 'TUE', class: '' },
+      { name: 'WED', class: '' }, { name: 'THU', class: '' }, { name: 'FRI', class: '' }, { name: 'SAT', class: 'sat' }
+    ];
+    weekHeaders.forEach(h => {
+      const headerDiv = document.createElement('div');
+      headerDiv.className = `day-header ${h.class}`;
+      headerDiv.innerText = h.name;
+      headerRow.appendChild(headerDiv);
+    });
+    calendarGrid.appendChild(headerRow);
+
+    const weeksContainer = document.createElement('div');
+    weeksContainer.className = 'calendar-weeks-container';
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevLastDate = new Date(year, month, 0).getDate();
+
+    let calendarDays = [];
+    for (let x = firstDayIndex; x > 0; x--) {
+      calendarDays.push({ dateStr: null, dayNum: prevLastDate - x + 1, isOtherMonth: true });
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      calendarDays.push({
+        dateStr: formatDateStr(year, month + 1, day),
+        dayNum: day,
+        isOtherMonth: false,
+        dayOfWeek: (firstDayIndex + day - 1) % 7
+      });
+    }
+    const nextDays = (7 - (calendarDays.length % 7)) % 7;
+    for (let j = 1; j <= nextDays; j++) {
+      calendarDays.push({ dateStr: null, dayNum: j, isOtherMonth: true });
+    }
+
+    for (let w = 0; w < calendarDays.length; w += 7) {
+      const weekDays = calendarDays.slice(w, w + 7);
+      const weekSlots = calculateWeekSlots(weekDays);
+
+      const weekRow = document.createElement('div');
+      weekRow.className = 'week-row';
+
+      weekDays.forEach((dayInfo, dayIdx) => {
+        const cell = document.createElement('div');
+        cell.className = 'calendar-cell' + (dayInfo.isOtherMonth ? ' other-month' : '');
+
+        if (!dayInfo.isOtherMonth && dayInfo.dateStr) {
+          const isToday = (today.getFullYear() === year && today.getMonth() === month && today.getDate() === dayInfo.dayNum);
+          if (isToday) cell.classList.add('is-today');
+
+          let numClass = dayInfo.dayOfWeek === 0 ? 'sun' : (dayInfo.dayOfWeek === 6 ? 'sat' : '');
+
+          const numberDisplay = isToday 
+            ? `<span class="today-circle">${dayInfo.dayNum}</span>` 
+            : `${dayInfo.dayNum}`;
+
+          cell.innerHTML = `
+            <div class="cell-top">
+              <span class="cell-number ${numClass}">
+                ${numberDisplay}
+              </span>
+              <button class="add-btn" onclick="openNewModal('${dayInfo.dateStr}')" title="일정 추가">+</button>
+            </div>
+            <div class="event-container" id="container-${dayInfo.dateStr}"></div>
+          `;
+
+          const container = cell.querySelector('.event-container');
+          const daySlots = weekSlots[dayIdx] || [];
+
+          daySlots.forEach(slot => {
+            if (slot === null) {
+              const emptySpacer = document.createElement('div');
+              emptySpacer.className = 'event-slot';
+              container.appendChild(emptySpacer);
+            } else {
+              const bar = document.createElement('div');
+              bar.className = 'event-bar';
+              
+              const colors = hexToHighlighter(slot.color || '#a855f7');
+              bar.style.backgroundColor = colors.bg;
+              bar.style.color = colors.text;
+              bar.style.setProperty('--highlighter-border', colors.border);
+
+              if (slot.isStart) bar.classList.add('start-date');
+              if (slot.isEnd) bar.classList.add('end-date');
+
+              bar.innerText = slot.isStart ? slot.title : ' ';
+
+              const tooltipText = `${slot.title}\n(${slot.startDate} ~ ${slot.endDate})`;
+              const tooltip = document.getElementById('customTooltip');
+
+              const moveTooltip = function(e) {
+                tooltip.innerText = tooltipText;
+                tooltip.style.display = 'block';
+
+                let left = e.clientX + 12;
+                let top = e.clientY + 15;
+
+                const tooltipWidth = tooltip.offsetWidth || 200;
+                if (left + tooltipWidth > window.innerWidth - 10) {
+                  left = window.innerWidth - tooltipWidth - 10;
+                }
+
+                const tooltipHeight = tooltip.offsetHeight || 50;
+                if (top + tooltipHeight > window.innerHeight - 10) {
+                  top = e.clientY - tooltipHeight - 10;
+                }
+
+                tooltip.style.left = left + 'px';
+                tooltip.style.top = top + 'px';
+              };
+
+              bar.onmouseenter = function(e) { moveTooltip(e); };
+              bar.onmousemove = function(e) { moveTooltip(e); };
+              bar.onmouseleave = function() { tooltip.style.display = 'none'; };
+
+              bar.onclick = function(e) {
+                e.stopPropagation();
+                tooltip.style.display = 'none';
+                openEditModal(slot.id);
+              };
+
+              container.appendChild(bar);
+            }
+          });
+        } else {
+          cell.innerHTML = `<div class="cell-top"><span class="cell-number">${dayInfo.dayNum}</span></div>`;
+        }
+
+        weekRow.appendChild(cell);
+      });
+
+      weeksContainer.appendChild(weekRow);
+    }
+
+    calendarGrid.appendChild(weeksContainer);
+  }
+
+  function calculateWeekSlots(weekDays) {
+    const weekSlots = Array.from({ length: 7 }, () => []);
+    const activeEvents = events.filter(ev => {
+      if (!ev.startDate || !ev.endDate) return false;
+      return weekDays.some(d => d.dateStr && d.dateStr >= ev.startDate && d.dateStr <= ev.endDate);
+    });
+    activeEvents.sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+    const trackOccupancy = [];
+    activeEvents.forEach(ev => {
+      let startIdx = -1, endIdx = -1;
+      weekDays.forEach((d, idx) => {
+        if (d.dateStr && d.dateStr >= ev.startDate && d.dateStr <= ev.endDate) {
+          if (startIdx === -1) startIdx = idx;
+          endIdx = idx;
+        }
+      });
+
+      if (startIdx === -1) return;
+
+      let assignedTrack = 0;
+      while (true) {
+        if (!trackOccupancy[assignedTrack]) trackOccupancy[assignedTrack] = Array(7).fill(false);
+        let isAvailable = true;
+        for (let i = startIdx; i <= endIdx; i++) {
+          if (trackOccupancy[assignedTrack][i]) { isAvailable = false; break; }
+        }
+        if (isAvailable) {
+          for (let i = startIdx; i <= endIdx; i++) trackOccupancy[assignedTrack][i] = true;
+          break;
+        }
+        assignedTrack++;
+      }
+
+      for (let i = startIdx; i <= endIdx; i++) {
+        weekSlots[i][assignedTrack] = { ...ev, isStart: (weekDays[i].dateStr === ev.startDate), isEnd: (weekDays[i].dateStr === ev.endDate) };
+      }
+    });
+
+    const maxTracks = trackOccupancy.length;
+    for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
+      for (let t = 0; t < maxTracks; t++) {
+        if (!weekSlots[dayIdx][t]) weekSlots[dayIdx][t] = null;
+      }
+    }
+    return weekSlots;
+  }
+
+  function openNewModal(dateStr) {
+    document.getElementById('modalHeaderTitle').innerText = '새 일정 등록';
+    document.getElementById('modalEventId').value = '';
+    document.getElementById('modalTitle').value = '';
+    document.getElementById('modalStartDate').value = dateStr;
+    document.getElementById('modalEndDate').value = dateStr;
+    document.getElementById('modalColor').value = '#a855f7';
+    document.getElementById('deleteBtn').style.display = 'none';
+    document.getElementById('eventModal').style.display = 'flex';
+  }
+
+  function openEditModal(eventId) {
+    const ev = events.find(e => e.id == eventId);
+    if (!ev) return;
+    document.getElementById('modalHeaderTitle').innerText = '일정 수정';
+    document.getElementById('modalEventId').value = ev.id;
+    document.getElementById('modalTitle').value = ev.title;
+    document.getElementById('modalStartDate').value = ev.startDate;
+    document.getElementById('modalEndDate').value = ev.endDate;
+    document.getElementById('modalColor').value = ev.color || '#2563eb';
+    document.getElementById('deleteBtn').style.display = 'inline-block';
+    document.getElementById('eventModal').style.display = 'flex';
+  }
+
+  function closeModal() { document.getElementById('eventModal').style.display = 'none'; }
+
+  async function saveEventFromModal() {
+    const eventId = document.getElementById('modalEventId').value;
+    const title = document.getElementById('modalTitle').value.trim();
+    const startDate = cleanDateStr(document.getElementById('modalStartDate').value);
+    const endDate = cleanDateStr(document.getElementById('modalEndDate').value);
+    const color = document.getElementById('modalColor').value;
+
+    if (!title) { await showAlert("일정 내용을 입력해주세요."); return; }
+    if (startDate > endDate) { await showAlert("종료일은 시작일보다 이전일 수 없습니다."); return; }
+
+    let targetEvent;
+    if (eventId) {
+      targetEvent = events.find(e => e.id == eventId);
+      if (targetEvent) { targetEvent.title = title; targetEvent.startDate = startDate; targetEvent.endDate = endDate; targetEvent.color = color; }
+    } else {
+      targetEvent = { id: Date.now(), title, startDate, endDate, color };
+      events.push(targetEvent);
+    }
+
+    closeModal();
+    renderPlanner();
+    await syncEventToCloud(targetEvent, false);
+  }
+
+  async function deleteEventFromModal() {
+    const eventId = document.getElementById('modalEventId').value;
+    if (!eventId) return;
+
+    const confirmed = await showConfirm("이 일정을 삭제하시겠습니까?");
+    if (confirmed) {
+      const targetEvent = events.find(e => e.id == eventId);
+      events = events.filter(e => e.id != eventId);
+      closeModal();
+      renderPlanner();
+      if (targetEvent) await syncEventToCloud(targetEvent, true);
+    }
+  }
+
+  function formatDateStr(year, month, day) {
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+</script>
+
+</body>
+</html>
