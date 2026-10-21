@@ -995,7 +995,8 @@
   }
 
   function goToday() {
-    currentDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    const realToday = new Date(); 
+    currentDate = new Date(realToday.getFullYear(), realToday.getMonth(), 1);
     renderPlanner();
     setTimeout(() => {
       const todayCell = document.querySelector('.calendar-cell.is-today');
