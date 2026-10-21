@@ -705,7 +705,7 @@
 
 <div class="planner-container">
   <div class="top-nav">
-    <div class="month-header">
+    <div class="month-header" onclick="triggerMonthPicker()" title="클릭하여 연월 선택">
       <div class="month-num" id="monthNum">--</div>
       <div class="month-title" id="monthTitle">---- --------</div>
       <input type="month" id="monthPicker" onchange="jumpToMonth(this.value)">
@@ -1482,6 +1482,18 @@
   function formatDateStr(year, month, day) {
     return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   }
+  // 월 헤더 클릭 시 연월 선택창을 강제로 띄워주는 함수
+  function triggerMonthPicker() {
+    const picker = document.getElementById('monthPicker');
+    if (picker) {
+      if (typeof picker.showPicker === 'function') {
+        picker.showPicker();
+      } else {
+        picker.click();
+      }
+    }
+  }
+
 </script>
 
 </body>
