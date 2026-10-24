@@ -812,6 +812,7 @@
   let events = [];
   let monthlyRoutines = {};
   let autoSaveTimers = {};
+  let holidays = {};
 
   window.onload = function() {
     if (!PLANNER_ID) {
@@ -838,6 +839,12 @@
     return str;
   }
 
+  // holidays 객체에서 날짜("YYYY-MM-DD")로 공휴일 이름을 찾음
+  function getHolidayTitle(dateStr) {
+    if (!dateStr) return "";
+    return holidays[dateStr] || "";
+  }
+
   async function loadDataFromCloud() {
     if (!PLANNER_ID) {
       renderPlanner();
@@ -856,6 +863,9 @@
           startDate: cleanDateStr(ev.startDate),
           endDate: cleanDateStr(ev.endDate)
         }));
+
+        const cloudHolidays = result.data.holidays || {};
+        holidays = cloudHolidays;
 
         const cloudMemos = result.data.memos || {};
         monthlyRoutines = {};
@@ -1279,17 +1289,22 @@
         if (!dayInfo.isOtherMonth && dayInfo.dateStr) {
           const isToday = (today.getFullYear() === year && today.getMonth() === month && today.getDate() === dayInfo.dayNum);
           if (isToday) cell.classList.add('is-today');
-
-          let numClass = dayInfo.dayOfWeek === 0 ? 'sun' : (dayInfo.dayOfWeek === 6 ? 'sat' : '');
+          
+          const holidayName = getHolidayTitle(dayInfo.dateStr); // 공휴일 체크
+          const isHoliday = (dayInfo.dayOfWeek === 0) || (holidayName !== "");
+          let numClass = isHoliday ? 'sun' : (dayInfo.dayOfWeek === 6 ? 'sat' : '');
 
           const numberDisplay = isToday 
             ? `<span class="today-circle">${dayInfo.dayNum}</span>` 
             : `${dayInfo.dayNum}`;
 
+          const holidayLabel = holidayName ? `<span style="font-size:10px; color:var(--sun-color); margin-left:4px; font-weight:normal;">${holidayName}</span>` : '';
+
           cell.innerHTML = `
             <div class="cell-top">
               <span class="cell-number ${numClass}">
                 ${numberDisplay}
+                ${holidayLabel}
               </span>
               <button class="add-btn" onclick="openNewModal('${dayInfo.dateStr}')" title="일정 추가">+</button>
             </div>
