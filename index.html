@@ -839,10 +839,28 @@
     return str;
   }
 
-  // holidays 객체에서 날짜("YYYY-MM-DD")로 공휴일 이름을 찾음
+  // 특정 날짜 문자열("YYYY-MM-DD")을 받아 해당하는 공휴일 이름을 반환하는 함수
   function getHolidayTitle(dateStr) {
-    if (!dateStr) return "";
-    return holidays[dateStr] || "";
+    if (!dateStr || !Array.isArray(holidays)) return "";
+    
+    const targetMonthDay = dateStr.substring(5); // "MM-DD" 추출 (예: "05-05")
+
+    for (let i = 0; i < holidays.length; i++) {
+      const h = holidays[i];
+      if (!h.date) continue;
+
+      // 1. 연도까지 정확히 일치하는 경우
+      if (h.date === dateStr) {
+        return h.title;
+      }
+
+      // 2. repeat이 true이고 월-일(MM-DD)이 일치하는 경우 (연도 무관 매년 반복)
+      if (h.repeat && h.date.substring(5) === targetMonthDay) {
+        return h.title;
+      }
+    }
+
+    return "";
   }
 
   async function loadDataFromCloud() {
