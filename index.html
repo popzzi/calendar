@@ -806,7 +806,7 @@
   let PLANNER_ID = urlParams.get('id') || localStorage.getItem('planner_ss_id');
   const SECRET_TOKEN = urlParams.get('token') || localStorage.getItem('planner_token') || "";
 
-  const today = new Date();
+  let today = new Date();
   let currentDate = new Date(today.getFullYear(), today.getMonth(), 1);
 
   let events = [];
@@ -1305,7 +1305,8 @@
         cell.className = 'calendar-cell' + (dayInfo.isOtherMonth ? ' other-month' : '');
 
         if (!dayInfo.isOtherMonth && dayInfo.dateStr) {
-          const isToday = (today.getFullYear() === year && today.getMonth() === month && today.getDate() === dayInfo.dayNum);
+          const realTimeToday = new Date();
+          const isToday = (realTimeToday.getFullYear() === year && realTimeToday.getMonth() === month && realTimeToday.getDate() === dayInfo.dayNum);
           if (isToday) cell.classList.add('is-today');
           
           const holidayName = getHolidayTitle(dayInfo.dateStr); // 공휴일 체크
